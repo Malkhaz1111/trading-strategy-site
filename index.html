@@ -3,52 +3,678 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trading Strategy Log</title>
-    <link rel="stylesheet" href="style.css">
+    <title>ტრეიდინგ ანალიზი</title>
+    <style>
+        :root {
+            --primary: #2962ff;
+            --secondary: #0d47a1;
+            --success: #4caf50;
+            --danger: #f44336;
+            --warning: #ff9800;
+            --dark: #1e1e2e;
+            --light: #f5f5f5;
+            --chart-bg: #131722;
+            --text-light: #e0e0e0;
+            --text-dark: #121212;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--dark);
+            color: var(--text-light);
+        }
+        
+        .navbar {
+            background-color: #0a0a14;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            color: var(--text-light);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .nav-link:hover {
+            color: var(--primary);
+        }
+        
+        .main-container {
+            padding: 1rem;
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 1rem;
+            height: calc(100vh - 64px);
+            overflow: hidden;
+        }
+        
+        .chart-section {
+            background-color: var(--chart-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            position: relative;
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+        
+        .symbol-selector {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        select, input, button {
+            background-color: #2a2e39;
+            border: 1px solid #4a4a4a;
+            color: var(--text-light);
+            padding: 0.5rem;
+            border-radius: 4px;
+        }
+        
+        button {
+            cursor: pointer;
+            background-color: var(--primary);
+            border: none;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: var(--secondary);
+        }
+        
+        .timeframe-selector {
+            display: flex;
+            gap: 0.3rem;
+        }
+        
+        .timeframe-btn {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.8rem;
+        }
+        
+        .chart-placeholder {
+            width: 100%;
+            height: calc(100% - 50px);
+            background-color: var(--chart-bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        
+        .chart-inner {
+            width: 100%;
+            height: 100%;
+            padding: 1rem;
+        }
+        
+        .analysis-panel {
+            background-color: #1c2030;
+            border-radius: 8px;
+            overflow-y: auto;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .panel-section {
+            padding: 1rem;
+            border-bottom: 1px solid #2a2e39;
+        }
+        
+        .panel-title {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+        
+        .indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            padding: 0.5rem;
+            background-color: #242842;
+            border-radius: 4px;
+        }
+        
+        .indicator-value {
+            font-weight: bold;
+        }
+        
+        .buy {
+            color: #4caf50;
+        }
+        
+        .sell {
+            color: #f44336;
+        }
+        
+        .neutral {
+            color: #ff9800;
+        }
+        
+        .strategy-item {
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            background-color: #242842;
+            border-radius: 4px;
+        }
+        
+        .strategy-name {
+            font-weight: bold;
+            margin-bottom: 0.3rem;
+        }
+        
+        .signal-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .signal-indicator {
+            height: 10px;
+            width: 10px;
+            border-radius: 50%;
+        }
+        
+        .buy-bg {
+            background-color: #4caf50;
+        }
+        
+        .sell-bg {
+            background-color: #f44336;
+        }
+        
+        .neutral-bg {
+            background-color: #ff9800;
+        }
+        
+        .loading {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid var(--primary);
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .news-item {
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            background-color: #242842;
+            border-radius: 4px;
+        }
+        
+        .news-time {
+            font-size: 0.8rem;
+            color: #a0a0a0;
+        }
+        
+        .news-title {
+            margin: 0.3rem 0;
+        }
+        
+        .news-impact {
+            font-size: 0.85rem;
+        }
+        
+        .impact-high {
+            color: #f44336;
+        }
+        
+        .impact-medium {
+            color: #ff9800;
+        }
+        
+        .impact-low {
+            color: #4caf50;
+        }
+        
+        .tab-container {
+            display: flex;
+            border-bottom: 1px solid #2a2e39;
+        }
+        
+        .tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .tab.active {
+            border-bottom: 2px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @media (max-width: 768px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-section {
+                height: 50vh;
+            }
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <h1>ტრეიდინგ სტრატეგიების დღიური</h1>
-        <nav>
-            <a href="#">მთავარი</a>
-            <a href="#">სტრატეგიები</a>
-            <a href="#">ახალი სტრატეგია</a>
-            <a href="#">ჩვენს შესახებ</a>
-        </nav>
-    </header>
-
-    <main>
-        <section class="intro">
-            <h2>მოგესალმები!</h2>
-            <p>აქ შეგიძლია შეინახო და გააზიარო შენი ტრეიდინგ სტრატეგიები.</p>
-        </section>
-
-        <section class="strategies">
-            <h2>ბოლო სტრატეგიები</h2>
-            <ul>
-                <li><strong>Breakout Strategy</strong> - გამოყენება ვოლუმის და მხარდაჭერის დონეების.</li>
-                <li><strong>RSI + EMA Combo</strong> - შესვლა მხოლოდ მაშინ, როცა RSI და EMA აჩვენებს თანხვედრას.</li>
-            </ul>
-        </section>
-
-        <section class="add-strategy">
-            <h2>დაამატე ახალი სტრატეგია</h2>
-            <form>
-                <label>სტრატეგიის სახელი:
-                    <input type="text" name="strategy-name" required>
-                </label>
-                <label>აღწერა:
-                    <textarea name="description" required></textarea>
-                </label>
-                <button type="submit">დამატება</button>
-            </form>
-        </section>
-    </main>
-
-    <footer>
-        <p>© 2025 შენი ტრეიდინგ სივრცე</p>
-    </footer>
-    <script src="script.js"></script>
+    <nav class="navbar">
+        <div class="chart-inner" id="chart-container">
+            <!-- TradingView ჩარტი აქ ჩასაჯდება -->
+        </div>        
+        <div class="logo">ტრეიდინგ ანალიზი</div>
+        <div class="nav-links">
+            <a href="#" class="nav-link">მთავარი</a>
+            <a href="#" class="nav-link">ანალიზი</a>
+            <a href="#" class="nav-link">სტრატეგიები</a>
+            <a href="#" class="nav-link">განათლება</a>
+            <a href="#" class="nav-link">კონტაქტი</a>
+        </div>
+    </nav>
+    
+    <div class="main-container">
+        <div class="chart-section">
+            <div class="chart-header">
+                <div class="symbol-selector">
+                    <select id="market-select">
+                        <option>Forex</option>
+                        <option>Crypto</option>
+                        <option>Stocks</option>
+                        <option>Commodities</option>
+                    </select>
+                    <select id="symbol-select">
+                        <option>EUR/USD</option>
+                        <option>BTC/USD</option>
+                        <option>GBP/USD</option>
+                        <option>USD/JPY</option>
+                        <option>XAU/USD</option>
+                    </select>
+                </div>
+                <div class="timeframe-selector">
+                    <button class="timeframe-btn">1m</button>
+                    <button class="timeframe-btn">5m</button>
+                    <button class="timeframe-btn">15m</button>
+                    <button class="timeframe-btn">1h</button>
+                    <button class="timeframe-btn">4h</button>
+                    <button class="timeframe-btn">1d</button>
+                </div>
+            </div>
+            <div class="chart-inner">
+                <img src="/api/placeholder/800/400" alt="TradingView Chart" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+        </div>
+        
+        <div class="analysis-panel">
+            <div class="tab-container">
+                <div class="tab active" data-tab="indicators">ინდიკატორები</div>
+                <div class="tab" data-tab="strategies">სტრატეგიები</div>
+                <div class="tab" data-tab="news">სიახლეები</div>
+            </div>
+            
+            <div class="tab-content active" id="indicators">
+                <div class="panel-section">
+                    <div class="panel-title">ტექნიკური ინდიკატორები</div>
+                    <div class="indicator">
+                        <span>RSI (14)</span>
+                        <span class="indicator-value buy">62.5 - ყიდვა</span>
+                    </div>
+                    <div class="indicator">
+                        <span>MACD</span>
+                        <span class="indicator-value sell">-0.0024 - გაყიდვა</span>
+                    </div>
+                    <div class="indicator">
+                        <span>Moving Average (50)</span>
+                        <span class="indicator-value buy">1.0892 - ყიდვა</span>
+                    </div>
+                    <div class="indicator">
+                        <span>Bollinger Bands</span>
+                        <span class="indicator-value neutral">ნეიტრალური</span>
+                    </div>
+                    <div class="indicator">
+                        <span>Stochastic</span>
+                        <span class="indicator-value buy">80.2 - ყიდვა</span>
+                    </div>
+                </div>
+                
+                <div class="panel-section">
+                    <div class="panel-title">მოკლევადიანი პროგნოზი</div>
+                    <div class="indicator">
+                        <span>5 წუთი</span>
+                        <span class="indicator-value buy">ყიდვა</span>
+                    </div>
+                    <div class="indicator">
+                        <span>15 წუთი</span>
+                        <span class="indicator-value neutral">ნეიტრალური</span>
+                    </div>
+                    <div class="indicator">
+                        <span>1 საათი</span>
+                        <span class="indicator-value buy">ყიდვა</span>
+                    </div>
+                </div>
+                
+                <div class="panel-section">
+                    <div class="panel-title">მხარდაჭერა და წინააღმდეგობა</div>
+                    <div class="indicator">
+                        <span>მხარდაჭერა 1</span>
+                        <span class="indicator-value">1.0875</span>
+                    </div>
+                    <div class="indicator">
+                        <span>მხარდაჭერა 2</span>
+                        <span class="indicator-value">1.0850</span>
+                    </div>
+                    <div class="indicator">
+                        <span>წინააღმდეგობა 1</span>
+                        <span class="indicator-value">1.0910</span>
+                    </div>
+                    <div class="indicator">
+                        <span>წინააღმდეგობა 2</span>
+                        <span class="indicator-value">1.0935</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="strategies">
+                <div class="panel-section">
+                    <div class="panel-title">პოპულარული სტრატეგიები</div>
+                    
+                    <div class="strategy-item">
+                        <div class="strategy-name">RSI + MA კვეთა</div>
+                        <div class="signal-container">
+                            <div class="signal-indicator buy-bg"></div>
+                            <span>ყიდვის სიგნალი</span>
+                        </div>
+                        <p>RSI გამოვიდა გადაყიდულობის ზონიდან და 50MA კვეთს 200MA-ს ზემოდან</p>
+                    </div>
+                    
+                    <div class="strategy-item">
+                        <div class="strategy-name">ბილ უილიამსის ფრაქტალები</div>
+                        <div class="signal-container">
+                            <div class="signal-indicator neutral-bg"></div>
+                            <span>ნეიტრალური სიგნალი</span>
+                        </div>
+                        <p>ფრაქტალები არ გვაძლევს მკაფიო მიმართულებას ამ მომენტში</p>
+                    </div>
+                    
+                    <div class="strategy-item">
+                        <div class="strategy-name">ალიგატორის სტრატეგია</div>
+                        <div class="signal-container">
+                            <div class="signal-indicator buy-bg"></div>
+                            <span>ყიდვის სიგნალი</span>
+                        </div>
+                        <p>ალიგატორის ხაზები იშლება - ტრენდის დასაწყისი</p>
+                    </div>
+                    
+                    <div class="strategy-item">
+                        <div class="strategy-name">ფიბონაჩის რეტრეისმენტი</div>
+                        <div class="signal-container">
+                            <div class="signal-indicator buy-bg"></div>
+                            <span>ყიდვის სიგნალი</span>
+                        </div>
+                        <p>ფასი აღდგენილია 0.618 დონემდე და იწყებს რებაუნდს</p>
+                    </div>
+                </div>
+                
+                <div class="panel-section">
+                    <div class="panel-title">ცნობილი ტრეიდერების სტრატეგიები</div>
+                    
+                    <div class="strategy-item">
+                        <div class="strategy-name">ლარი უილიამსის პროცენტული დიაპაზონი</div>
+                        <div class="signal-container">
+                            <div class="signal-indicator buy-bg"></div>
+                            <span>ყიდვის სიგნალი</span>
+                        </div>
+                    </div>
+                    
+                    <div class="strategy-item">
+                        <div class="strategy-name">ალექსანდერ ელდერის სამმაგი ეკრანი</div>
+                        <div class="signal-container">
+                            <div class="signal-indicator sell-bg"></div>
+                            <span>გაყიდვის სიგნალი</span>
+                        </div>
+                    </div>
+                    
+                    <div class="strategy-item">
+                        <div class="strategy-name">ვიქტორ სპეანდეოს მოძრაობის სისტემა</div>
+                        <div class="signal-container">
+                            <div class="signal-indicator neutral-bg"></div>
+                            <span>ნეიტრალური სიგნალი</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="news">
+                <div class="panel-section">
+                    <div class="panel-title">ბაზრის სიახლეები</div>
+                    
+                    <div class="news-item">
+                        <div class="news-time">12:30 - დღეს</div>
+                        <h4 class="news-title">ევრო გაიზარდა აშშ-ს მონაცემების შემდეგ</h4>
+                        <div class="news-impact impact-high">მაღალი გავლენა</div>
+                    </div>
+                    
+                    <div class="news-item">
+                        <div class="news-time">10:15 - დღეს</div>
+                        <h4 class="news-title">ფედერალური რეზერვის საპროცენტო განაკვეთი უცვლელი რჩება</h4>
+                        <div class="news-impact impact-high">მაღალი გავლენა</div>
+                    </div>
+                    
+                    <div class="news-item">
+                        <div class="news-time">08:45 - დღეს</div>
+                        <h4 class="news-title">გერმანიის PMI მონაცემები მოლოდინზე უკეთესი</h4>
+                        <div class="news-impact impact-medium">საშუალო გავლენა</div>
+                    </div>
+                    
+                    <div class="news-item">
+                        <div class="news-time">ვშაბათი</div>
+                        <h4 class="news-title">აშშ-ს უმუშევრობის მონაცემები</h4>
+                        <div class="news-impact impact-medium">საშუალო გავლენა</div>
+                    </div>
+                </div>
+                
+                <div class="panel-section">
+                    <div class="panel-title">ეკონომიკური კალენდარი</div>
+                    
+                    <div class="news-item">
+                        <div class="news-time">14:30 - დღეს</div>
+                        <h4 class="news-title">აშშ CPI</h4>
+                        <div class="news-impact impact-high">მაღალი გავლენა</div>
+                    </div>
+                    
+                    <div class="news-item">
+                        <div class="news-time">16:00 - დღეს</div>
+                        <h4 class="news-title">ECB პრეზიდენტის სიტყვა</h4>
+                        <div class="news-impact impact-high">მაღალი გავლენა</div>
+                    </div>
+                    
+                    <div class="news-item">
+                        <div class="news-time">12:30 - ხვალ</div>
+                        <h4 class="news-title">UK საცალო გაყიდვები</h4>
+                        <div class="news-impact impact-medium">საშუალო გავლენა</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // სიმულაცია - ჩატვირთვისას ავტომატურად აკეთებს ანალიზს
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tab functionality
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabId = tab.getAttribute('data-tab');
+                    
+                    // Remove active class from all tabs and contents
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    // Add active class to selected tab and content
+                    tab.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+            
+            // Symbol change simulation
+            const symbolSelect = document.getElementById('symbol-select');
+            const marketSelect = document.getElementById('market-select');
+            
+            function updateAnalysis() {
+                // Show loading spinner
+                const chartSection = document.querySelector('.chart-section');
+                const loading = document.createElement('div');
+                loading.className = 'loading';
+                loading.innerHTML = '<div class="spinner"></div>';
+                chartSection.appendChild(loading);
+                
+                // Simulate analysis delay
+                setTimeout(() => {
+                    // Remove loading spinner
+                    chartSection.removeChild(loading);
+                    
+                    // Update random values
+                    const indicators = document.querySelectorAll('.indicator-value');
+                    const signals = ['buy', 'sell', 'neutral'];
+                    const signalTexts = {
+                        'buy': 'ყიდვა',
+                        'sell': 'გაყიდვა',
+                        'neutral': 'ნეიტრალური'
+                    };
+                    
+                    indicators.forEach(indicator => {
+                        // Remove existing classes
+                        indicator.classList.remove('buy', 'sell', 'neutral');
+                        
+                        // For some indicators, just update numeric values
+                        if (indicator.textContent.includes('.')) {
+                            const baseValue = parseFloat(indicator.textContent);
+                            const newValue = (baseValue + (Math.random() * 0.01 - 0.005)).toFixed(4);
+                            
+                            // For support/resistance levels
+                            if (!indicator.textContent.includes('-')) {
+                                indicator.textContent = newValue;
+                            } else {
+                                // For indicators with signal
+                                const randomSignal = signals[Math.floor(Math.random() * signals.length)];
+                                indicator.textContent = `${newValue} - ${signalTexts[randomSignal]}`;
+                                indicator.classList.add(randomSignal);
+                            }
+                        } else if (indicator.textContent.includes('ყიდვა') || 
+                                   indicator.textContent.includes('გაყიდვა') || 
+                                   indicator.textContent.includes('ნეიტრალური')) {
+                            // For text only signals
+                            const randomSignal = signals[Math.floor(Math.random() * signals.length)];
+                            indicator.textContent = signalTexts[randomSignal];
+                            indicator.classList.add(randomSignal);
+                        }
+                    });
+                    
+                    // Update strategies
+                    const strategySignals = document.querySelectorAll('.signal-indicator');
+                    const signalClasses = ['buy-bg', 'sell-bg', 'neutral-bg'];
+                    const signalTextsArray = ['ყიდვის სიგნალი', 'გაყიდვის სიგნალი', 'ნეიტრალური სიგნალი'];
+                    
+                    strategySignals.forEach(signal => {
+                        // Remove existing classes
+                        signal.classList.remove('buy-bg', 'sell-bg', 'neutral-bg');
+                        
+                        // Add random class
+                        const randomIndex = Math.floor(Math.random() * signalClasses.length);
+                        signal.classList.add(signalClasses[randomIndex]);
+                        
+                        // Update text
+                        const textElement = signal.nextElementSibling;
+                        if (textElement) {
+                            textElement.textContent = signalTextsArray[randomIndex];
+                        }
+                    });
+                    
+                }, 1500);
+            }
+            
+            // Initial analysis
+            updateAnalysis();
+            
+            // Event listeners for analysis updates
+            symbolSelect.addEventListener('change', updateAnalysis);
+            marketSelect.addEventListener('change', updateAnalysis);
+            
+            const timeframeButtons = document.querySelectorAll('.timeframe-btn');
+            timeframeButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remove active class from all timeframe buttons
+                    timeframeButtons.forEach(btn => btn.style.backgroundColor = '');
+                    
+                    // Add active class to selected button
+                    this.style.backgroundColor = '#0d47a1';
+                    
+                    // Update analysis
+                    updateAnalysis();
+                });
+            });
+            
+            // Set initial active timeframe
+            timeframeButtons[3].style.backgroundColor = '#0d47a1';
+        });
+    </script>
+    <script src="App.js"></script>
 </body>
-<script src="script.js"></script>
 </html>
